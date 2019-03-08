@@ -79,9 +79,12 @@ void loop() {
     //accelgyro.getAcceleration(&ax, &ay, &az);
     //accelgyro.getRotation(&gx, &gy, &gz);
     Serial.print("a/g:\t");
-    Serial.print(ax); Serial.print(",");
-    Serial.print(ay); Serial.print(",");
-    Serial.print(az); Serial.print(",");
+    float ax1 = ax/16384.000;
+    float ay1 = ay/16384.000;
+    float az1 = az/16384.000;
+    Serial.print(ax1); Serial.print(",");
+    Serial.print(ay1); Serial.print(",");
+    Serial.print(az1); Serial.print(",");
     Serial.println("");
 
     // blink LED to indicate activity
