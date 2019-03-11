@@ -15,22 +15,9 @@ uint8_t blue = 0;
 uint8_t green = 0;
 uint8_t yellow = 0;
 
-// colors
-uint16_t red_target[3] = {142, 69, 56};
-uint16_t green_target[3] = {89, 113, 58};
-uint16_t blue_target[3] = {74, 94, 94};
-uint16_t yellow_target[3] = {120, 90, 48};
-uint16_t white_target[3] = {91, 90, 76};
-
 //running average
-uint16_t len = 30;
-uint16_t red_avg_data[30];
-uint16_t green_avg_data[30];
-uint16_t blue_avg_data[30];
-
-double red_avg;
-double green_avg;
-double blue_avg;
+uint16_t len = 3;
+char status[len];
 
 void setup(void) {
     Serial.begin(9600);
@@ -41,60 +28,24 @@ void setup(void) {
         Serial.println("No TCS34725 found ... check your connections");
     while (1);
     }
-
-    //initialize average colors
-    uint16_t r, g, b, c;
-    getRGB(&r, &g, &b, &c);
-
-    for (int i = 0; i < len; i++) {
-        red_avg_data[i] = r;
-        green_avg_data[i] = g;
-        blue_avg_data[i] = b;
-    }
-
-    red_avg = mean(red_avg_data);
-    green_avg = mean(green_avg_data);
-    blue_avg = mean(blue_avg_data);
 }
 
-void update_averages(uint16_t r, uint16_t g, uint16_t b) {
+// check if we've been in the color for len cycles
+void update_status(char color) {
     for (int i = (len - 1); i > 0; i--) {
-        red_avg_data[i] = red_avg_data[i - 1];
-        green_avg_data[i] = green_avg_data[i - 1];
-        blue_avg_data[i] = blue_avg_data[i - 1];
+        status[i] = red_avg_data[i - 1];
     }
 
-    red_avg_data[0] = r;
-    green_avg_data[0] = g;
-    blue_avg_data[0] = b;
-
-    red_avg = mean(red_avg_data);
-    green_avg = mean(green_avg_data);
-    blue_avg = mean(blue_avg_data);
+    status[0] = color;
 }
 
-// try squareing each value then sqrt the whole thing
-uint16_t mean(uint16_t *data) {
-    uint16_t sum = 0;
-    for (int i = 0; i < len; i++) {
-        sum += data[i];
-    }
-
-    uint16_t avg = sum / len;
-    return avg;
-}
-
-uint16_t min_distance(double *distances) {
-    double min = distances[0];
-    uint16_t min_index = 0;
-    for (int i = 1; i < 5; i++) {
-        if (distances[i] < min) {
-            min = distances[i];
-            min_index = i;
+uint16_t is_in_color(char target) {
+    for (i = 0; i < len; i++) {
+        if (status[i] != target) {
+            return 0;
         }
     }
-
-    return min_index;
+    return 1;
 }
 
 void RGBtoHSL(uint16_t r, uint16_t g, uint16_t b, double *h, double *s, double *s2, double *l, double *v) {
@@ -159,34 +110,46 @@ void RGBtoHSL(uint16_t r, uint16_t g, uint16_t b, double *h, double *s, double *
 void get_color_state(uint16_t r, uint16_t g, uint16_t b) {
     double h, s, s2, l, v;
 
-    Serial.print("R: "); Serial.print(r, DEC); Serial.print(" ");
-    Serial.print("G: "); Serial.print(g, DEC); Serial.print(" ");
-    Serial.print("B: "); Serial.print(b, DEC); Serial.print(" ");
-    Serial.println(" ");
-
     RGBtoHSL(r, g, b, &h, &s, &s2, &l, &v);
 
+    // for data logging purposes
+    Serial.print(h); Serial.print(" ");
+    Serial.print(s); Serial.print(" ");
+    Serial.println(l);
+
     // check if we're over a color
-    if (s > 0.4 && (l > 0.4 && l < 0.6)) {
-        if (h <= 15 || h >= 330) { // red
-            Serial.println("Got RED!");
-        } else if (h >= 105 && h <= 135) { // green
-            Serial.println("Got GREEN!");
-        } else if (h >= 225 && h <= 255) { // blue
-            Serial.println("Got BLUE!");
-        } else if (h >= 45 && h <= 75) { // yellow
-            Serial.println("Got YELLOW!");
+    if (s > 0.18) {
+        if (h <= 11 || h >= 355) { // red
+            if (is_in_color('r')) {
+                Serial.println("Got RED!");
+            } else {
+                update_status('r');
+            }
+        } else if (h >= 79 && h <= 117) { // green
+            if (is_in_color('g')) {
+                Serial.println("Got GREEN!");
+            } else {
+                update_status('g');
+            }
+        } else if (h >= 190 && h <= 200) { // blue
+            if (is_in_color('b')) {
+                Serial.println("Got BLUE!");
+            } else {
+                update_status('b');
+            }
+        } else if (h >= 44 && h <= 79) { // yellow
+            if (is_in_color('y')) {
+                Serial.println("Got YELLOW!");
+            } else {
+                update_status('y');
+            }
         }
+    } else {
+        // not in a color so start filling up the buffer with fails
+        update_status('x');
     }
 
-    Serial.print("H: "); Serial.print(h, DEC); Serial.print(" ");
-    Serial.print("S(HSL): "); Serial.print(s, DEC); Serial.print(" ");
-    Serial.print("L: "); Serial.print(l, DEC); Serial.print(" ");
-    Serial.print("S(HSV): "); Serial.print(s2, DEC); Serial.print(" ");
-    Serial.print("V: "); Serial.print(v, DEC); Serial.print(" ");
-    Serial.println(" ");
-
-    delay(2000);
+    delay(100); // TODO remove this is practice - does there need to be any frequency constraint?
     
 }
 
