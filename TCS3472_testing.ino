@@ -5,10 +5,6 @@
 /* Initialise with specific int time and gain values */
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_154MS, TCS34725_GAIN_1X);
 
-
-void update_averages(uint16_t r, uint16_t g, uint16_t b);
-uint16_t mean(uint16_t *data);
-
 // flags which indicate if we're over color strips
 uint8_t red = 0;
 uint8_t blue = 0;
@@ -31,7 +27,7 @@ void setup(void) {
 }
 
 // check if we've been in the color for len cycles
-void update_status(char color) {
+void updateStatus(char color) {
     for (int i = (len - 1); i > 0; i--) {
         status[i] = red_avg_data[i - 1];
     }
@@ -39,7 +35,7 @@ void update_status(char color) {
     status[0] = color;
 }
 
-uint16_t is_in_color(char target) {
+uint16_t isInColor(char target) {
     for (i = 0; i < len; i++) {
         if (status[i] != target) {
             return 0;
@@ -107,7 +103,7 @@ void RGBtoHSL(uint16_t r, uint16_t g, uint16_t b, double *h, double *s, double *
 
 
 // determine which color strip we are over (if at all)
-void get_color_state(uint16_t r, uint16_t g, uint16_t b) {
+void getColorState(uint16_t r, uint16_t g, uint16_t b) {
     double h, s, s2, l, v;
 
     RGBtoHSL(r, g, b, &h, &s, &s2, &l, &v);
@@ -120,33 +116,33 @@ void get_color_state(uint16_t r, uint16_t g, uint16_t b) {
     // check if we're over a color
     if (s > 0.18) {
         if (h <= 11 || h >= 355) { // red
-            if (is_in_color('r')) {
+            if (isInColor('r')) {
                 Serial.println("Got RED!");
             } else {
-                update_status('r');
+                updateStatus('r');
             }
         } else if (h >= 79 && h <= 117) { // green
-            if (is_in_color('g')) {
+            if (isInColor('g')) {
                 Serial.println("Got GREEN!");
             } else {
-                update_status('g');
+                updateStatus('g');
             }
         } else if (h >= 190 && h <= 200) { // blue
-            if (is_in_color('b')) {
+            if (isInColor('b')) {
                 Serial.println("Got BLUE!");
             } else {
-                update_status('b');
+                updateStatus('b');
             }
         } else if (h >= 44 && h <= 79) { // yellow
-            if (is_in_color('y')) {
+            if (isInColor('y')) {
                 Serial.println("Got YELLOW!");
             } else {
-                update_status('y');
+                updateStatus('y');
             }
         }
     } else {
         // not in a color so start filling up the buffer with fails
-        update_status('x');
+        updateStatus('x');
     }
 
     delay(100); // TODO remove this is practice - does there need to be any frequency constraint?
@@ -175,7 +171,7 @@ void loop(void) {
 
   getRGB(&r, &g, &b, &c);
 
-  get_color_state(r, g, b);
+  getColorState(r, g, b);
 
   // colorTemp = tcs.calculateColorTemperature(r, g, b);
   //colorTemp = tcs.calculateColorTemperature_dn40(r, g, b, c);
