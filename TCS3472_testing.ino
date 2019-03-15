@@ -12,8 +12,8 @@ uint8_t green = 0;
 uint8_t yellow = 0;
 
 //running average
-uint16_t len = 3;
-char status[len];
+int len = 3;
+char status[3];
 
 void setup(void) {
     Serial.begin(9600);
@@ -29,14 +29,14 @@ void setup(void) {
 // check if we've been in the color for len cycles
 void updateStatus(char color) {
     for (int i = (len - 1); i > 0; i--) {
-        status[i] = red_avg_data[i - 1];
+        status[i] = status[i - 1];
     }
 
     status[0] = color;
 }
 
 uint16_t isInColor(char target) {
-    for (i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++) {
         if (status[i] != target) {
             return 0;
         }
@@ -117,36 +117,33 @@ void getColorState(uint16_t r, uint16_t g, uint16_t b) {
     if (s > 0.18) {
         if (h <= 11 || h >= 355) { // red
             if (isInColor('r')) {
-                Serial.println("Got RED!");
+                //Serial.println("Got RED!");
             } else {
                 updateStatus('r');
             }
         } else if (h >= 79 && h <= 117) { // green
             if (isInColor('g')) {
-                Serial.println("Got GREEN!");
+                //Serial.println("Got GREEN!");
             } else {
                 updateStatus('g');
             }
         } else if (h >= 190 && h <= 200) { // blue
             if (isInColor('b')) {
-                Serial.println("Got BLUE!");
+                //Serial.println("Got BLUE!");
             } else {
                 updateStatus('b');
             }
         } else if (h >= 44 && h <= 79) { // yellow
             if (isInColor('y')) {
-                Serial.println("Got YELLOW!");
+                //Serial.println("Got YELLOW!");
             } else {
                 updateStatus('y');
             }
         }
     } else {
         // not in a color so start filling up the buffer with fails
-        updateStatus('x');
+        updateStatus('x');  
     }
-
-    delay(100); // TODO remove this is practice - does there need to be any frequency constraint?
-    
 }
 
 void getRGB(uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c) {
@@ -167,11 +164,17 @@ void getRGB(uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c) {
 }
 
 void loop(void) {
-  uint16_t r, g, b, c;
+    uint16_t r, g, b, c;
 
-  getRGB(&r, &g, &b, &c);
+    getRGB(&r, &g, &b, &c);
 
-  getColorState(r, g, b);
+    getColorState(r, g, b);
+
+    int currentMillis = millis();
+    
+    while (millis() - currentMillis < 98) {
+      // spin for 98 milliseconds
+    }
 
   // colorTemp = tcs.calculateColorTemperature(r, g, b);
   //colorTemp = tcs.calculateColorTemperature_dn40(r, g, b, c);
