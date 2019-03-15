@@ -1,0 +1,4 @@
+carpet - as sensor goes closer to carpet, saturation goes down - hue goes
+wild but should be irrelevant
+
+
